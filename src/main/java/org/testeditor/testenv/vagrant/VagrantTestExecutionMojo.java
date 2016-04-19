@@ -25,6 +25,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 @Mojo(name = "testExec")
 public class VagrantTestExecutionMojo extends AbstractVagrantMojo {
 
+	private static final String TEST_PROPERTY = "test";
+
 	@Parameter(property = "project.build.directory")
 	private File outputPath;
 
@@ -37,10 +39,7 @@ public class VagrantTestExecutionMojo extends AbstractVagrantMojo {
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		String command;
 		try {
-			String test = "";
-			if (System.getProperties().containsKey("test")) {
-				test = System.getProperty("test");
-			}
+			String test = System.getProperty(TEST_PROPERTY, "");
 			command = createExecCommand(test);
 		} catch (IOException e) {
 			throw new MojoExecutionException("", e);
@@ -62,20 +61,10 @@ public class VagrantTestExecutionMojo extends AbstractVagrantMojo {
 	 *             on failure.
 	 */
 	protected String createExecCommand(String testName) throws IOException {
-		List<String> lines = Files.readAllLines(new File(getVagrantFileDir(), "Vagrantfile").toPath(),
-				StandardCharsets.UTF_8);
-		boolean isLinux = true;
-		for (String string : lines) {
-			if (!string.trim().startsWith("#")) {
-				if (string.contains("config.vm.communicator") && string.contains("winrm")) {
-					isLinux = false;
-				}
-			}
-		}
 		String executionScript = null;
 		String execCommand = null;
 		String execScript = null;
-		if (isLinux) {
+		if (isLinux()) {
 			executionScript = getExecutionScriptForLinux(testName);
 			execCommand = projectDirInTestEnv + "/target/executeTest.sh";
 			execScript = "executeTest.sh";
@@ -90,6 +79,27 @@ public class VagrantTestExecutionMojo extends AbstractVagrantMojo {
 		launcher.setExecutable(true);
 		getLog().info("Created launcher " + launcher.toString());
 		return execCommand;
+	}
+
+	/**
+	 * Reads the vagrant file to detect the os.
+	 * 
+	 * @return false if the vagrant contains winrm for communication othercase
+	 *         true.
+	 * @throws IOException
+	 *             on error reading vagrant file.
+	 */
+	private boolean isLinux() throws IOException {
+		List<String> lines = Files.readAllLines(new File(getVagrantFileDir(), "Vagrantfile").toPath(),
+				StandardCharsets.UTF_8);
+		for (String string : lines) {
+			if (!string.trim().startsWith("#")) {
+				if (string.contains("config.vm.communicator") && string.contains("winrm")) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	/**

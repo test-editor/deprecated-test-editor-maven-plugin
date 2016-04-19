@@ -11,11 +11,13 @@
  *******************************************************************************/
 package org.testeditor.testenv.vagrant;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -33,7 +35,10 @@ public abstract class AbstractVagrantMojo extends AbstractMojo {
 	protected int executeVagrantCommand(String... command) throws MojoExecutionException {
 		ProcessBuilder builder = new ProcessBuilder(command);
 		builder.directory(getVagrantFileDir());
-		getLog().debug(getVagrantFileDir().toString());
+		if (getLog().isDebugEnabled()) {
+			getLog().debug("Execute vagrant command: " + Arrays.toString(command) + " with vagrant file: "
+					+ getVagrantFileDir().toString());
+		}
 		try {
 			Process upPrc = builder.start();
 			createAndRunLoggerOnStream(upPrc.getInputStream(), false);
@@ -42,12 +47,9 @@ public abstract class AbstractVagrantMojo extends AbstractMojo {
 				Thread.sleep(100);
 			}
 			return upPrc.exitValue();
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException e) {
 			getLog().error(e);
-			throw new MojoExecutionException("", e);
-		} catch (InterruptedException e) {
-			getLog().error(e);
-			throw new MojoExecutionException("", e);
+			throw new MojoExecutionException("Trying to execute vagrant command: " + Arrays.toString(command), e);
 		}
 	}
 
@@ -65,16 +67,14 @@ public abstract class AbstractVagrantMojo extends AbstractMojo {
 	protected void createAndRunLoggerOnStream(final InputStream inputStream, final boolean errorStrem) {
 		new Thread(new Runnable() {
 			public void run() {
-				char[] cbuf = new char[8192];
-				int len = -1;
 				try {
-					InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-					while ((len = reader.read(cbuf)) > 0) {
-						String message = new String(cbuf, 0, len);
+					BufferedReader reader = new BufferedReader(
+							new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+					while (reader.ready()) {
 						if (errorStrem) {
-							getLog().error(message);
+							getLog().error(reader.readLine());
 						} else {
-							getLog().info(message);
+							getLog().info(reader.readLine());
 						}
 					}
 				} catch (IOException e) {
