@@ -42,8 +42,8 @@ public class GenerateMojo extends AbstractMojo {
 	@Component
 	private BuildPluginManager pluginManager;
 
-	@Parameter
-	private String testEditorVersion = "1.1.0";
+	@Parameter(required = true)
+	private String testEditorVersion;
 
 	@Parameter(defaultValue = "${project.basedir}/src-gen/test/java")
 	private String testEditorOutput;

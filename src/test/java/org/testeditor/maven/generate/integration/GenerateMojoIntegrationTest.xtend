@@ -1,5 +1,6 @@
 package org.testeditor.maven.generate.integration
 
+import java.io.File
 import org.junit.Test
 
 import static org.junit.Assert.*
@@ -7,9 +8,11 @@ import static org.junit.Assert.*
 class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 
 	@Test
-	def void compilesSimpleTestCase() throws Exception {
+	def void compilesAndRunsEmptyTestCase() {
 		// given
-		write("pom.xml", generatePom)
+		write("pom.xml", generatePom('''
+			<testEditorVersion>1.1.0</testEditorVersion>
+		'''))
 		write("src/test/java/com/example/ExampleTest.tcl", '''
 			package com.example
 			
@@ -29,7 +32,26 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 		]
 	}
 
-	private def String generatePom() '''
+	@Test
+	def void failsOnMissingTestEditorVersion() {
+		// given
+		write("pom.xml", generatePom(''))
+		write("src/test/java/com/example/ExampleTest.tcl", '''
+			package com.example
+			
+			# ExampleTest
+		''')
+
+		// when
+		runMavenBuild("clean", "verify")
+
+		// then
+		// TODO verify that the build actually failed
+		val exampleTest = new File(folder.root, "src-gen/test/java/com/example/ExampleTest.java")
+		assertFalse(exampleTest.exists)
+	}
+
+	private def String generatePom(CharSequence configuration) '''
 		<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 			xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 			<modelVersion>4.0.0</modelVersion>
@@ -59,7 +81,9 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 						<groupId>org.testeditor</groupId>
 						<artifactId>testeditor-maven-plugin</artifactId>
 						<version>1.0-SNAPSHOT</version>
-						<configuration></configuration>
+						<configuration>
+							«configuration»
+						</configuration>
 						<executions>
 							<execution>
 								<goals>
