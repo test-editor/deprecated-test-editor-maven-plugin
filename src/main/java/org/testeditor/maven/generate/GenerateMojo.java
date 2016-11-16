@@ -74,14 +74,16 @@ public class GenerateMojo extends AbstractMojo {
 	 */
 	private List<Dependency> getDependencies() {
 		List<Dependency> dependencies = new ArrayList<>();
-		String[] versionSplit = testEditorVersion.split("\\.");
-		int major = Integer.parseInt(versionSplit[0]);
-		int minor = Integer.parseInt(versionSplit[1]);
-		if (major == 1 && minor >= 2) {
+		if (isVersionGreaterOrEquals_1_2_0()) {
 			// required since 1.2.0
 			dependencies.add(dependency("org.apache.commons", "commons-lang3", "3.4"));
 			dependencies.add(dependency("org.testeditor", "gradle-tooling-api", testEditorVersion));
 			dependencies.add(dependency("org.testeditor", "org.testeditor.dsl.common.model", testEditorVersion));
+		}
+		if (isVersionSmaller_1_2_0()) {
+			// required prior to 1.2.0 - TML was unified with TCL in 1.2.0
+			dependencies.add(dependency("org.testeditor", "org.testeditor.tml.model", testEditorVersion));
+			dependencies.add(dependency("org.testeditor", "org.testeditor.tml.dsl", testEditorVersion));
 		}
 		// required for all versions
 		dependencies.add(dependency("org.testeditor", "org.testeditor.dsl.common", testEditorVersion));
@@ -89,8 +91,6 @@ public class GenerateMojo extends AbstractMojo {
 		dependencies.add(dependency("org.testeditor", "org.testeditor.aml.dsl", testEditorVersion));
 		dependencies.add(dependency("org.testeditor", "org.testeditor.tsl.model", testEditorVersion));
 		dependencies.add(dependency("org.testeditor", "org.testeditor.tsl.dsl", testEditorVersion));
-		dependencies.add(dependency("org.testeditor", "org.testeditor.tml.model", testEditorVersion));
-		dependencies.add(dependency("org.testeditor", "org.testeditor.tml.dsl", testEditorVersion));
 		dependencies.add(dependency("org.testeditor", "org.testeditor.tcl.model", testEditorVersion));
 		dependencies.add(dependency("org.testeditor", "org.testeditor.tcl.dsl", testEditorVersion));
 		return dependencies;
@@ -137,17 +137,34 @@ public class GenerateMojo extends AbstractMojo {
 
 	// @formatter:off
 	private Element getLanguages() {
-		return element("languages",
-			element("language", element("setup", "org.testeditor.aml.dsl.AmlStandaloneSetup")),
-			element("language", element("setup", "org.testeditor.tsl.dsl.TslStandaloneSetup")),
-			element("language", element("setup", "org.testeditor.tml.dsl.TmlStandaloneSetup")),
-			element("language", element("setup", "org.testeditor.tcl.dsl.TclStandaloneSetup"),
-				element("outputConfigurations",
-					element("outputConfiguration",element("outputDirectory", testEditorOutput))
-				)
-			)
-		);
+		ArrayList<Element> languages = new ArrayList<>();
+		languages.add(element("language", element("setup", "org.testeditor.aml.dsl.AmlStandaloneSetup")));
+		languages.add(element("language", element("setup", "org.testeditor.tsl.dsl.TslStandaloneSetup")));
+		languages.add(element("language", element("setup", "org.testeditor.tcl.dsl.TclStandaloneSetup"),
+			element("outputConfigurations", element("outputConfiguration",element("outputDirectory", testEditorOutput)))
+		));
+		
+		if (isVersionSmaller_1_2_0()) {
+			// required prior to 1.2.0 - TML was unified with TCL in 1.2.0
+			languages.add(element("language", element("setup", "org.testeditor.tml.dsl.TmlStandaloneSetup")));
+		}
+		return element("languages", languages.toArray(new Element[0]));
 	}
 	// @formatter:on
+
+	private boolean isVersionGreaterOrEquals_1_2_0() {
+		String[] versionSplit = testEditorVersion.split("\\.");
+		int major = Integer.parseInt(versionSplit[0]);
+		int minor = Integer.parseInt(versionSplit[1]);
+		return (major == 1 && minor > 2) || major > 1;
+	}
+
+	// TODO future versions of this plugin should not support versions < 1.2.0
+	private boolean isVersionSmaller_1_2_0() {
+		String[] versionSplit = testEditorVersion.split("\\.");
+		int major = Integer.parseInt(versionSplit[0]);
+		int minor = Integer.parseInt(versionSplit[1]);
+		return major == 1 && minor < 2;
+	}
 
 }
