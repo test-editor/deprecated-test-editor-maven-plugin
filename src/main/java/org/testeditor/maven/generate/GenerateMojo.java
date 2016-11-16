@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
 @Mojo(name = "generate", defaultPhase = GENERATE_SOURCES, requiresDependencyResolution = COMPILE)
@@ -44,18 +45,38 @@ public class GenerateMojo extends AbstractMojo {
 	@Parameter
 	private String testEditorVersion = "1.1.0";
 
-	@Parameter
-	private String testEditorOutput = "src-gen/test/java";
+	@Parameter(defaultValue = "${project.basedir}/src-gen/test/java")
+	private String testEditorOutput;
 
-	@Parameter
-	private String xtextVersion = "2.10.0";
+	@Parameter(defaultValue = "2.10.0")
+	private String xtextVersion;
+
+	@Parameter(defaultValue = "1.12")
+	private String buildHelperMavenPluginVersion ;
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		getLog().info("Test-Editor version: " + testEditorVersion);
 		getLog().info("Xtext version: " + xtextVersion);
+
+		generateWithXtextPlugin();
+		addTestSourceWithBuildHelper();
+	}
+
+	private void generateWithXtextPlugin() throws MojoExecutionException {
 		executeMojo(getXtextPlugin(), goal("generate"), configuration(getConfiguration()),
 				executionEnvironment(project, session, pluginManager));
+	}
+
+	/**
+	 * Adds the folder configured in {@link #testEditorOutput} as a test source
+	 * using the build-helper-maven-plugin.
+	 */
+	private void addTestSourceWithBuildHelper() throws MojoExecutionException {
+		Plugin plugin = plugin(groupId("org.codehaus.mojo"), artifactId("build-helper-maven-plugin"),
+				version(buildHelperMavenPluginVersion));
+		Xpp3Dom configuration = configuration(element("sources", element("source", testEditorOutput)));
+		executeMojo(plugin, "add-test-source", configuration, executionEnvironment(project, session, pluginManager));
 	}
 
 	// @formatter:off

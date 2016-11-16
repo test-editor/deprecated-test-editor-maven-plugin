@@ -25,9 +25,14 @@ abstract class AbstractMavenIntegrationTest {
 	}
 
 	protected def String read(String filePath) {
+		val file = assertExists(filePath)
+		return Files.readLines(file, StandardCharsets.UTF_8).join(System.lineSeparator)
+	}
+
+	protected def File assertExists(String filePath) {
 		val file = new File(folder.root, filePath)
 		assertTrue('''File with path='«filePath»' does not exist.''', file.exists)
-		return Files.readLines(file, StandardCharsets.UTF_8).join(System.lineSeparator)
+		return file
 	}
 
 }

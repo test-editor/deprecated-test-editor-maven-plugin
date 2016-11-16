@@ -1,6 +1,7 @@
 package org.testeditor.maven.generate.integration
 
 import org.junit.Test
+
 import static org.junit.Assert.*
 
 class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
@@ -9,18 +10,23 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 	def void compilesSimpleTestCase() throws Exception {
 		// given
 		write("pom.xml", generatePom)
-		write("src/test/java/com/example/Example.tcl", '''
+		write("src/test/java/com/example/ExampleTest.tcl", '''
 			package com.example
 			
-			# Example
+			# ExampleTest
 		''')
 
 		// when
 		runMavenBuild("clean", "verify")
 
 		// then
-		val compiledJava = read("src-gen/test/java/com/example/Example.java")
-		assertTrue(compiledJava.contains("public class Example {"))
+		read("src-gen/test/java/com/example/ExampleTest.java") => [
+			assertTrue(contains("public class ExampleTest {"))
+		]
+		assertExists("target/test-classes/com/example/ExampleTest.class")
+		read("target/surefire-reports/com.example.ExampleTest.txt") => [
+			assertTrue(contains("Tests run: 1, Failures: 0, Errors: 0, Skipped: 0"))
+		]
 	}
 
 	private def String generatePom() '''
