@@ -23,17 +23,18 @@ abstract class AbstractMavenIntegrationTest {
 	@Rule
 	public MojoRule mojo = new MojoRule
 
-	def void runMavenBuild(String goal) {
-		executeMojo(folder.root, goal)
-	}
-
-	private def MavenExecutionResult executeMojo(File baseDir, String goal) throws Exception {
-		val project = mojo.readMavenProject(baseDir)
+	def MavenExecutionResult executeMojo(String goal) {
+		val project = mojo.readMavenProject(folder.root)
 		val session = mojo.newMavenSession(project)
 		session.fixRepositorySystemSession
 		val execution = mojo.newMojoExecution(goal)
-		mojo.executeMojo(session, project, execution)
-		return session.result
+		val result = session.result
+		try {
+			mojo.executeMojo(session, project, execution)
+		} catch (Exception e) {
+			result.addException(e)
+		}
+		return result
 	}
 
 	/**
@@ -62,6 +63,12 @@ abstract class AbstractMavenIntegrationTest {
 	protected def File assertExists(String filePath) {
 		val file = new File(folder.root, filePath)
 		assertTrue('''File with path='«filePath»' does not exist.''', file.exists)
+		return file
+	}
+
+	protected def File assertNotExists(String filePath) {
+		val file = new File(folder.root, filePath)
+		assertFalse('''File with path='«filePath»' should not exist, but it does.''', file.exists)
 		return file
 	}
 

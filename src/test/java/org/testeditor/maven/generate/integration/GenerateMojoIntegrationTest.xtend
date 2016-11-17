@@ -1,14 +1,14 @@
 package org.testeditor.maven.generate.integration
 
-import java.io.File
+import org.junit.Before
 import org.junit.Test
 
 import static org.junit.Assert.*
 
 class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 
-	@Test
-	def void compilesAndRunsEmptyTestCase() {
+	@Before
+	def void setupBuild() {
 		// given
 		write("pom.xml", generatePom('''
 			<testEditorVersion>1.1.0</testEditorVersion>
@@ -18,17 +18,17 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 			
 			# ExampleTest
 		''')
+	}
 
+	@Test
+	def void generatesJavaCode() {
 		// when
-		runMavenBuild("generate")
+		val result = executeMojo("generate")
 
 		// then
+		assertFalse(result.hasExceptions)
 		read("src-gen/test/java/com/example/ExampleTest.java") => [
 			assertTrue(contains("public class ExampleTest {"))
-		]
-		assertExists("target/test-classes/com/example/ExampleTest.class")
-		read("target/surefire-reports/com.example.ExampleTest.txt") => [
-			assertTrue(contains("Tests run: 1, Failures: 0, Errors: 0, Skipped: 0"))
 		]
 	}
 
@@ -36,19 +36,13 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 	def void failsOnMissingTestEditorVersion() {
 		// given
 		write("pom.xml", generatePom(''))
-		write("src/test/java/com/example/ExampleTest.tcl", '''
-			package com.example
-			
-			# ExampleTest
-		''')
 
 		// when
-		runMavenBuild("generate")
+		val result = executeMojo("generate")
 
 		// then
-		// TODO verify that the build actually failed
-		val exampleTest = new File(folder.root, "src-gen/test/java/com/example/ExampleTest.java")
-		assertFalse(exampleTest.exists)
+		assertTrue(result.hasExceptions)
+		assertNotExists("src-gen/test/java/com/example/ExampleTest.java")
 	}
 
 	private def String generatePom(CharSequence configuration) '''
@@ -73,6 +67,16 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 					<name>bintray</name>
 					<url>http://dl.bintray.com/test-editor/maven</url>
 				</pluginRepository>
+				
+				<!-- TODO remove this old repository once 1.2.0 is released and used here -->
+				<pluginRepository>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<id>bintray-test-editor-maven-OLD</id>
+					<name>bintray</name>
+					<url>http://dl.bintray.com/test-editor/test-editor-maven</url>
+				</pluginRepository>
 			</pluginRepositories>
 		
 			<build>
@@ -80,7 +84,6 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 					<plugin>
 						<groupId>org.testeditor</groupId>
 						<artifactId>testeditor-maven-plugin</artifactId>
-						<version>1.0-SNAPSHOT</version>
 						<configuration>
 							«configuration»
 						</configuration>
