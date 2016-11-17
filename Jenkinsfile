@@ -6,16 +6,15 @@ nodeWithProperWorkspace {
         sh "git clean -ffdx"
     }
 
-    // TODO get rid of the install parameter (currently need it for the integration test) 
     stage('Build') {
         withMavenEnv {
-            mvn 'clean install -DskipTests'
+            mvn 'clean compile'
         }
     }
     
     stage('Test') {
         withMavenEnv {
-           mvn 'test'
+           mvn 'verify'
         }
     }
 

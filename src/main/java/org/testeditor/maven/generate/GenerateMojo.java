@@ -2,16 +2,7 @@ package org.testeditor.maven.generate;
 
 import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
 import static org.apache.maven.plugins.annotations.ResolutionScope.COMPILE;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.dependency;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +25,8 @@ import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 public class GenerateMojo extends AbstractMojo {
 
 	@Component
-	private MavenProject project;
+	/* @VisibleForTesting */
+	protected MavenProject project;
 
 	@Component
 	private MavenSession session;
@@ -43,16 +35,18 @@ public class GenerateMojo extends AbstractMojo {
 	private BuildPluginManager pluginManager;
 
 	@Parameter(required = true)
-	private String testEditorVersion;
+	/* @VisibleForTesting */
+	protected String testEditorVersion;
 
 	@Parameter(defaultValue = "${project.basedir}/src-gen/test/java")
-	private String testEditorOutput;
+	/* @VisibleForTesting */
+	protected String testEditorOutput;
 
 	@Parameter(defaultValue = "2.10.0")
 	private String xtextVersion;
 
 	@Parameter(defaultValue = "1.12")
-	private String buildHelperMavenPluginVersion ;
+	private String buildHelperMavenPluginVersion;
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
@@ -145,7 +139,8 @@ public class GenerateMojo extends AbstractMojo {
 		return configuration;
 	}
 
-	private Element getSourceRoots() {
+	/* @VisibleForTesting */
+	protected Element getSourceRoots() {
 		ArrayList<Element> sourceRoots = new ArrayList<>();
 		for (String sourceRoot : project.getCompileSourceRoots()) {
 			sourceRoots.add(element("sourceRoot", sourceRoot));
@@ -157,7 +152,8 @@ public class GenerateMojo extends AbstractMojo {
 	}
 
 	// @formatter:off
-	private Element getLanguages() {
+	/* @VisibleForTesting */
+	protected Element getLanguages() {
 		ArrayList<Element> languages = new ArrayList<>();
 		languages.add(element("language", element("setup", "org.testeditor.aml.dsl.AmlStandaloneSetup")));
 		languages.add(element("language", element("setup", "org.testeditor.tsl.dsl.TslStandaloneSetup")));
