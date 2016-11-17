@@ -20,7 +20,7 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 		''')
 
 		// when
-		runMavenBuild("clean", "verify")
+		runMavenBuild("generate")
 
 		// then
 		read("src-gen/test/java/com/example/ExampleTest.java") => [
@@ -43,7 +43,7 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 		''')
 
 		// when
-		runMavenBuild("clean", "verify")
+		runMavenBuild("generate")
 
 		// then
 		// TODO verify that the build actually failed
