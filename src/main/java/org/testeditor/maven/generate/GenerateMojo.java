@@ -92,7 +92,7 @@ public class GenerateMojo extends AbstractMojo {
 		if (isVersionGreaterOrEquals_1_2_0()) {
 			// required since 1.2.0
 			dependencies.add(dependency("org.apache.commons", "commons-lang3", "3.4"));
-			dependencies.add(dependency("org.testeditor", "gradle-tooling-api", testEditorVersion));
+			dependencies.add(dependency("org.gradle", "gradle-tooling-api", "2.14.1"));
 			dependencies.add(dependency("org.testeditor", "org.testeditor.dsl.common.model", testEditorVersion));
 		}
 		if (isVersionSmaller_1_2_0()) {
