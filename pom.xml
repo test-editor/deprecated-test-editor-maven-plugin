@@ -21,7 +21,7 @@
 
 	<distributionManagement>
 		<repository>
-			<id>bintray-test-editor-maven</id>
+			<id>bintray</id>
 			<name>test-editor-maven</name>
 			<url>https://api.bintray.com/maven/test-editor/maven/test-editor-maven-plugin/;publish=1</url>
 		</repository>

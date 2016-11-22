@@ -8,16 +8,17 @@ nodeWithProperWorkspace {
             sh "git checkout $env.BRANCH_NAME" // workaround for https://issues.jenkins-ci.org/browse/JENKINS-31924
             sh 'git fetch --prune origin +refs/tags/*:refs/tags/*' // delete all local tags
             sh "git reset --hard origin/master"
-            if (isVersionTag()) {
-                // Workaround: we don't want infinite releases.
-                echo "Aborting build as the current commit on master is already tagged."
-                currentBuild.displayName = "checkout-only"
-                return
-            }
             sh "git clean -ffdx"
         } else {
             sh "git clean -ffd"
         }
+    }
+
+    if (isMaster() && isVersionTag()) {
+        // Workaround: we don't want infinite releases.
+        echo "Aborting build as the current commit on master is already tagged."
+        currentBuild.displayName = "checkout-only"
+        return
     }
 
     def preReleaseVersion = getCurrentVersion()
@@ -36,8 +37,13 @@ nodeWithProperWorkspace {
            mvn 'verify'
         }
     }
-   
+
     if (isMaster()) {
+        stage('Deploy') {
+            withMavenEnv {
+                mvn 'deploy'
+            }
+        }
         postRelease(preReleaseVersion)
     }
 
@@ -50,9 +56,8 @@ nodeWithProperWorkspace {
 void prepareRelease() {
     stage('Prepare release') {
         // Remove SNAPSHOT version
-        def String noSnapshotVersion = '\\${parsedVersion.majorVersion}.\\${parsedVersion.minorVersion}.\\${parsedVersion.incrementalVersion}'
         echo 'Removing SNAPSHOT from version'
-        setVersion(noSnapshotVersion)
+        removeSnapshot()
         // Set the display name for the job to the version
         String version = getCurrentVersion()
         currentBuild.displayName = version
@@ -83,9 +88,8 @@ void postRelease(String preReleaseVersion) {
         def developVersion = getCurrentVersion()
         if (developVersion == preReleaseVersion) {
             sh "git merge origin/master"
-            def nextSnapshotVersion = '\\${parsedVersion.majorVersion}.\\${parsedVersion.nextMinorVersion}.0-SNAPSHOT'
-            setVersion(nextSnapshotVersion)
-            sh "git add *"
+            setNextSnapshotVersion()
+            sh "git add ."
             sh "git commit -m '[release] set version ${getCurrentVersion()}'"
             sh "git push origin develop"
         } else {
@@ -99,10 +103,14 @@ String getCurrentVersion() {
     return pom.version
 }
 
-void setVersion(String newVersion, String rootPom = null) {
+void removeSnapshot() {
     withMavenEnv {
-        def goals = 'build-helper:parse-version release:update-versions'
-        def pom = rootPom ? "-f $rootPom " : ''
-        sh "mvn $pom$goals -DdevelopmentVersion=$newVersion"
+        mvn 'build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=\\${parsedVersion.majorVersion}.\\${parsedVersion.minorVersion}'
+    }
+}
+
+void setNextSnapshotVersion() {
+    withMavenEnv {
+        mvn 'build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=\\${parsedVersion.majorVersion}.\\${parsedVersion.nextMinorVersion}-SNAPSHOT'
     }
 }
