@@ -87,7 +87,8 @@ public class GenerateMojo extends AbstractMojo {
 	/**
 	 * Handles the dependencies required for the Test-Editor generation.
 	 */
-	private List<Dependency> getDependencies() {
+	/* @VisibleForTesting */
+	protected List<Dependency> getDependencies() {
 		List<Dependency> dependencies = new ArrayList<>();
 		if (isVersionGreaterOrEquals_1_2_0()) {
 			// required since 1.2.0
@@ -173,7 +174,7 @@ public class GenerateMojo extends AbstractMojo {
 		String[] versionSplit = testEditorVersion.split("\\.");
 		int major = Integer.parseInt(versionSplit[0]);
 		int minor = Integer.parseInt(versionSplit[1]);
-		return (major == 1 && minor > 2) || major > 1;
+		return (major == 1 && minor >= 2) || major > 1;
 	}
 
 	// TODO future versions of this plugin should not support versions < 1.2.0
