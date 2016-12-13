@@ -9,6 +9,7 @@ import org.mockito.Mock
 import org.mockito.runners.MockitoJUnitRunner
 import org.twdata.maven.mojoexecutor.MojoExecutor.Element
 
+import static org.junit.Assert.*
 import static org.mockito.Mockito.*
 
 @RunWith(MockitoJUnitRunner)
@@ -112,6 +113,18 @@ class GenerateMojoTest {
 			  </language>
 			</languages>
 		''')
+	}
+
+	@Test
+	def void dependenciesFor_1_2_0() {
+		// given
+		mojo.testEditorVersion = "1.2.0"
+
+		// when
+		val dependencies = mojo.dependencies
+
+		// then
+		assertNotNull(dependencies.findFirst[artifactId == 'org.testeditor.dsl.common.model'])
 	}
 
 	private def void assertEquals(Element actual, CharSequence expected) {
