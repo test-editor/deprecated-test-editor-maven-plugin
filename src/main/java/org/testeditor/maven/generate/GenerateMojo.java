@@ -105,7 +105,7 @@ public class GenerateMojo extends AbstractMojo {
 		List<Dependency> dependencies = new ArrayList<>();
 		if (isVersionGreaterOrEquals_1_6_0()) {
 			// required since 1.6.0
-			dependencies.add(dependency("com.google.code.gson", "gson", "2.7.0"));
+			dependencies.add(dependency("com.google.code.gson", "gson", "2.7"));
 		}
 		// required since 1.2.0
 		dependencies.add(dependency("org.apache.commons", "commons-lang3", "3.4"));
