@@ -11,7 +11,7 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 	def void setupBuild() {
 		// given
 		write("pom.xml", generatePom('''
-			<testEditorVersion>1.1.0</testEditorVersion>
+			<testEditorVersion>1.5.0</testEditorVersion>
 		'''))
 		write("src/test/java/com/example/ExampleTest.tcl", '''
 			package com.example
@@ -26,9 +26,12 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 		val result = executeMojo("generate")
 
 		// then
+		if (result.hasExceptions) {
+            result.exceptions.forEach[ printStackTrace]
+        }
 		assertFalse(result.hasExceptions)
 		read("src-gen/test/java/com/example/ExampleTest.java") => [
-			assertTrue(contains("public class ExampleTest {"))
+			assertTrue(contains("public class ExampleTest"))
 		]
 	}
 
@@ -67,15 +70,21 @@ class GenerateMojoIntegrationTest extends AbstractMavenIntegrationTest {
 					<name>bintray</name>
 					<url>http://dl.bintray.com/test-editor/maven</url>
 				</pluginRepository>
-				
-				<!-- TODO remove this old repository once 1.2.0 is released and used here -->
 				<pluginRepository>
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
-					<id>bintray-test-editor-maven-OLD</id>
-					<name>bintray</name>
-					<url>http://dl.bintray.com/test-editor/test-editor-maven</url>
+					<id>test-editor-Fixtures</id>
+					<name>test-editor-Fixtures</name>
+					<url>http://dl.bintray.com/test-editor/Fixtures</url>
+				</pluginRepository>
+				<pluginRepository>
+				  <id>gradle</id>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<name>gradle</name>
+				  <url>https://repo.gradle.org/gradle/libs-releases-local</url>
 				</pluginRepository>
 			</pluginRepositories>
 		

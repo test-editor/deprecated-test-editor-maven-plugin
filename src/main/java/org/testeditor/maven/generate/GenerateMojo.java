@@ -42,19 +42,32 @@ public class GenerateMojo extends AbstractMojo {
 	/* @VisibleForTesting */
 	protected String testEditorOutput;
 
-	@Parameter(defaultValue = "2.10.0")
-	private String xtextVersion;
+	@Parameter
+	/* @VisibleForTesting */
+	protected String xtextVersion;
 
 	@Parameter(defaultValue = "1.12")
 	private String buildHelperMavenPluginVersion;
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
+		configureXtextVersion();
 		getLog().info("Test-Editor version: " + testEditorVersion);
 		getLog().info("Xtext version: " + xtextVersion);
 
 		generateWithXtextPlugin();
 		addTestSourceWithBuildHelper();
+	}
+
+	/* @VisibleForTesting */
+	protected void configureXtextVersion() {
+		if (xtextVersion == null) {
+			if (isVersionGreaterOrEquals_1_6_0()) {
+				xtextVersion = "2.11.0";
+			} else {
+				xtextVersion = "2.10.0";
+			}
+		}
 	}
 
 	private void generateWithXtextPlugin() throws MojoExecutionException {
@@ -90,17 +103,14 @@ public class GenerateMojo extends AbstractMojo {
 	/* @VisibleForTesting */
 	protected List<Dependency> getDependencies() {
 		List<Dependency> dependencies = new ArrayList<>();
-		if (isVersionGreaterOrEquals_1_2_0()) {
-			// required since 1.2.0
-			dependencies.add(dependency("org.apache.commons", "commons-lang3", "3.4"));
-			dependencies.add(dependency("org.gradle", "gradle-tooling-api", "2.14.1"));
-			dependencies.add(dependency("org.testeditor", "org.testeditor.dsl.common.model", testEditorVersion));
+		if (isVersionGreaterOrEquals_1_6_0()) {
+			// required since 1.6.0
+			dependencies.add(dependency("com.google.code.gson", "gson", "2.7.0"));
 		}
-		if (isVersionSmaller_1_2_0()) {
-			// required prior to 1.2.0 - TML was unified with TCL in 1.2.0
-			dependencies.add(dependency("org.testeditor", "org.testeditor.tml.model", testEditorVersion));
-			dependencies.add(dependency("org.testeditor", "org.testeditor.tml.dsl", testEditorVersion));
-		}
+		// required since 1.2.0
+		dependencies.add(dependency("org.apache.commons", "commons-lang3", "3.4"));
+		dependencies.add(dependency("org.gradle", "gradle-tooling-api", "2.14.1"));
+		dependencies.add(dependency("org.testeditor", "org.testeditor.dsl.common.model", testEditorVersion));
 		// required for all versions
 		dependencies.add(dependency("org.testeditor", "org.testeditor.dsl.common", testEditorVersion));
 		dependencies.add(dependency("org.testeditor", "org.testeditor.aml.model", testEditorVersion));
@@ -158,31 +168,18 @@ public class GenerateMojo extends AbstractMojo {
 		ArrayList<Element> languages = new ArrayList<>();
 		languages.add(element("language", element("setup", "org.testeditor.aml.dsl.AmlStandaloneSetup")));
 		languages.add(element("language", element("setup", "org.testeditor.tsl.dsl.TslStandaloneSetup")));
-		languages.add(element("language", element("setup", "org.testeditor.tcl.dsl.TclStandaloneSetup"),
-			element("outputConfigurations", element("outputConfiguration",element("outputDirectory", testEditorOutput)))
-		));
-		
-		if (isVersionSmaller_1_2_0()) {
-			// required prior to 1.2.0 - TML was unified with TCL in 1.2.0
-			languages.add(element("language", element("setup", "org.testeditor.tml.dsl.TmlStandaloneSetup")));
-		}
+		languages.add(element("language", element("setup", "org.testeditor.tcl.dsl.TclStandaloneSetup"), element(
+				"outputConfigurations", element("outputConfiguration", element("outputDirectory", testEditorOutput)))));
+
 		return element("languages", languages.toArray(new Element[0]));
 	}
 	// @formatter:on
 
-	private boolean isVersionGreaterOrEquals_1_2_0() {
+	private boolean isVersionGreaterOrEquals_1_6_0() {
 		String[] versionSplit = testEditorVersion.split("\\.");
 		int major = Integer.parseInt(versionSplit[0]);
 		int minor = Integer.parseInt(versionSplit[1]);
-		return (major == 1 && minor >= 2) || major > 1;
-	}
-
-	// TODO future versions of this plugin should not support versions < 1.2.0
-	private boolean isVersionSmaller_1_2_0() {
-		String[] versionSplit = testEditorVersion.split("\\.");
-		int major = Integer.parseInt(versionSplit[0]);
-		int minor = Integer.parseInt(versionSplit[1]);
-		return major == 1 && minor < 2;
+		return (major == 1 && minor >= 6) || major > 1;
 	}
 
 }
