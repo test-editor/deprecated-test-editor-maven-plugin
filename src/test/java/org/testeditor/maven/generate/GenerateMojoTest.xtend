@@ -20,7 +20,7 @@ class GenerateMojoTest {
 
 	@Before
 	def void setupMojo() {
-		mojo.testEditorVersion = "1.1.0"
+		mojo.testEditorVersion = "1.5.0"
 		mojo.project = project
 		mojo.testEditorOutput = "my/output/dir"
 	}
@@ -55,38 +55,6 @@ class GenerateMojoTest {
 	}
 
 	@Test
-	def void languageSetupFor_1_1_0() {
-		// given
-		mojo.testEditorVersion = "1.1.0"
-
-		// when
-		val languages = mojo.languages
-
-		// then
-		languages.assertEquals('''
-			<languages>
-			  <language>
-			    <setup>org.testeditor.aml.dsl.AmlStandaloneSetup</setup>
-			  </language>
-			  <language>
-			    <setup>org.testeditor.tsl.dsl.TslStandaloneSetup</setup>
-			  </language>
-			  <language>
-			    <setup>org.testeditor.tcl.dsl.TclStandaloneSetup</setup>
-			    <outputConfigurations>
-			      <outputConfiguration>
-			        <outputDirectory>«mojo.testEditorOutput»</outputDirectory>
-			      </outputConfiguration>
-			    </outputConfigurations>
-			  </language>
-			  <language>
-			    <setup>org.testeditor.tml.dsl.TmlStandaloneSetup</setup>
-			  </language>
-			</languages>
-		''')
-	}
-
-	@Test
 	def void languageSetupFor_1_2_0() {
 		// given
 		mojo.testEditorVersion = "1.2.0"
@@ -116,6 +84,18 @@ class GenerateMojoTest {
 	}
 
 	@Test
+	def void dependenciesFor_1_6_0() {
+		// given
+		mojo.testEditorVersion = "1.6.0"
+
+		// when
+		val dependencies = mojo.dependencies
+
+		// then
+		assertNotNull(dependencies.findFirst[artifactId == 'gson'])
+	}
+
+	@Test
 	def void dependenciesFor_1_2_0() {
 		// given
 		mojo.testEditorVersion = "1.2.0"
@@ -125,6 +105,45 @@ class GenerateMojoTest {
 
 		// then
 		assertNotNull(dependencies.findFirst[artifactId == 'org.testeditor.dsl.common.model'])
+	}
+
+	@Test
+	def void xtextVersionIsDerivedFor_1_5_0() {
+		// given
+		mojo.testEditorVersion = "1.5.0"
+		mojo.xtextVersion = null
+
+		// when
+		mojo.configureXtextVersion
+
+		// then
+		assertEquals("2.10.0", mojo.xtextVersion)
+	}
+
+	@Test
+	def void xtextVersionIsDerivedFor_1_6_0() {
+		// given
+		mojo.testEditorVersion = "1.6.0"
+		mojo.xtextVersion = null
+
+		// when
+		mojo.configureXtextVersion
+
+		// then
+		assertEquals("2.11.0", mojo.xtextVersion)
+	}
+
+	@Test
+	def void xtextVersionIsNotOverwrittenIfSet() {
+		// given
+		mojo.testEditorVersion = "1.5.0"
+		mojo.xtextVersion = "custom"
+
+		// when
+		mojo.configureXtextVersion
+
+		// then
+		assertEquals("custom", mojo.xtextVersion)
 	}
 
 	private def void assertEquals(Element actual, CharSequence expected) {
